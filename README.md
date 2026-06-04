@@ -1,14 +1,12 @@
-# Slimming MCP tool context with mcpproxy
+# MCP tool context reduction with mcpproxy
 
-Connect a handful of MCP servers to a client like opencode or Cline and every tool
-description lands in the model's context before you've typed anything. With a big
-toolset, that alone can eat most of your context window.
+Connecting a lot of of MCP servers to a client like opencode results in descriptions overloading the model's context before any work even begins.
 
 mcpproxy gets around it: your client talks to one proxy that keeps all the tools
 behind a single `retrieve_tools` search. The model only goes looking when it
 actually needs a tool.
 
-## What we measured
+## What I've measured
 
 | Setup | Tools the client loads | Tool-def tokens |
 |---|---|---|
@@ -18,29 +16,27 @@ actually needs a tool.
 
 That ~1,850-token cost is fixed; it doesn't grow as you add servers. A
 `retrieve_tools` call pulls back ~2,000 tokens, and only when the model searches.
-So instead of paying for every tool up front, you pay a little, and only when it's
-relevant.
 
-## Set up mcpproxy
+## Set-up
 
-1. Install it. Grab a build from
-   <https://github.com/smart-mcp-proxy/mcpproxy-go/releases> (or `brew`/`apt`/`dnf`)
+1. Install.
+   <https://github.com/smart-mcp-proxy/mcpproxy-go/releases> 
    and put `mcpproxy` on your PATH.
 
-2. Add your servers:
+2. Add servers:
    ```bash
    mcpproxy upstream add github -- npx -y @modelcontextprotocol/server-github
    mcpproxy upstream add notion https://mcp.notion.com/sse
    ```
 
-3. Run it with `--disable-management`:
+3. Run with `--disable-management`:
    ```bash
    mcpproxy serve -l 127.0.0.1:8080 --disable-management
    ```
-   Leave that flag off and it exposes about ten of its own tools, which cancels most
-   of the saving.
+   ! Leave --disable-management flag off and it exposes about ten of its own tools, which cancels most
+   of the saving !
 
-4. Approve the tools once. They start out blocked:
+4. Approve the tools once:
    ```bash
    mcpproxy upstream approve <server>      # run for each server
    ```
@@ -48,22 +44,16 @@ relevant.
 5. Point your client at the proxy, then delete the direct servers (leave them in and
    you load both):
    - opencode: run `mcpproxy connect opencode`, then remove the old `mcp` entries
-     from `~/.config/opencode/opencode.json`. Use `http://127.0.0.1:8080/mcp`, with
-     no trailing slash.
-   - Cline: add a remote (streamable HTTP) server pointing at
-     `http://127.0.0.1:8080/mcp?apikey=<key>` (run `mcpproxy status` for the key),
-     then remove the direct servers. We didn't test Cline, so check its docs.
+     from `~/.config/opencode/opencode.json`. Use `http://127.0.0.1:8080/mcp'
+   - Cline: Didn't test Cline, so check its docs.
 
-## Check the improvement yourself
+## Check the improvement
 
 `verify_improvement.py` reads your `~/.mcpproxy/mcp_config.json`, connects to every
-server directly (baseline) and to the proxy (gateway), and prints the saving. You
-don't need an API key.
+server directly (baseline) and to the proxy (gateway), and prints the saving.
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/python verify_improvement.py
+python verify_improvement.py
 ```
 
 Example output:
@@ -71,14 +61,14 @@ Example output:
 RESULT: 92828 -> 1854 tokens  (saved 90974, 98.0% reduction)
 ```
 
-## Reproduce the stress test (optional)
+## Stress test (optional)
 
 `bloat_server.py` is a fake MCP server that exposes N tools, handy for recreating the
 "too many tools" situation:
 
 ```bash
 mcpproxy upstream add crm --no-quarantine -- python bloat_server.py 120 crm
-# add a few more (billing, support, ...), restart mcpproxy, then run verify_improvement.py
+# add, restart mcpproxy, then run verify_improvement.py
 ```
 
 ## Good to know
@@ -86,5 +76,5 @@ mcpproxy upstream add crm --no-quarantine -- python bloat_server.py 120 crm
 - `--disable-management` is the flag that actually matters (step 3).
 - Approving tools (step 4) is a separate thing from quarantine, and you always have
   to do it. Run it again whenever a server gains new tools.
-- Behind a corporate HTTP proxy, set `NO_PROXY=127.0.0.1,localhost` so your client's
+- Behind a corporate proxy, set `NO_PROXY=127.0.0.1,localhost` so your client's
   call to the proxy doesn't get routed through it.
