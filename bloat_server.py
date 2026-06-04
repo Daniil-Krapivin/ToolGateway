@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""A synthetic MCP server exposing N realistic-looking tools, to simulate the
-"too many tools" situation for the stress test.
-
-Usage:  python bloat_server.py <N> <prefix>
-Register it in mcpproxy, e.g.:
-  mcpproxy upstream add crm --no-quarantine -- python /path/bloat_server.py 120 crm
-"""
 import asyncio
 import sys
 
