@@ -1,19 +1,9 @@
-#!/usr/bin/env python3
-"""Measure the tool-context reduction mcpproxy gives you, using YOUR real config.
-
-Reads ~/.mcpproxy/mcp_config.json, connects to each upstream directly (baseline)
-and to the running proxy (gateway), tokenizes both tool lists (cl100k), and prints
-the difference. No LLM / API credits needed.
-
-Usage:  python verify_improvement.py [path-to-mcp_config.json]
-"""
 import asyncio
 import json
 import os
 import sys
 from pathlib import Path
 
-# Don't tunnel the loopback call to the proxy through a corporate HTTP proxy.
 os.environ["NO_PROXY"] = "127.0.0.1,localhost,::1"
 os.environ["no_proxy"] = "127.0.0.1,localhost,::1"
 
